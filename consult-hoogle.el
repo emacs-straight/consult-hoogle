@@ -1,19 +1,21 @@
 ;;; consult-hoogle.el --- Hoogle frontend using consult -*- lexical-binding: t; -*-
-;;
+
+;; Copyright (C) 2024 Free Software Foundation, Inc.
+
 ;; Created: April 10, 2022
-;; Modified: April 10, 2022
 ;; License: GPL-3.0-or-later
 ;; Version: 0.0.1
 ;; Keywords: docs languages
-;; Homepage: https://github.com/aikrahguzar/consult-hoogle
+;; Homepage: https://codeberg.org/rahguzar/consult-hoogle
 ;; Package-Requires: ((emacs "27.1") (haskell-mode "16.1"))
-;;
-;; This file is not part of GNU Emacs.
-;;
+
+;; This file is part of GNU Emacs.
+
 ;;; Commentary:
+
 ;; Search the local hoogle database from Emacs using the nicities provided by
 ;; consult.
-;;
+
 ;;; Code:
 
 ;;;; Packages
@@ -23,15 +25,19 @@
 (require 'shr)
 
 ;;;; Variables
+(defgroup consult-hoogle nil
+  "A frontend for hoogle."
+  :group 'consult)
+
 (defcustom consult-hoogle-args
   '("hoogle" . ("search" "--jsonl" "-q" "--count=250"))
   "The hoogle invocation used to get results.
-It is should be a cons (COMMAND . ARGS). COMMAND should be valid executable.
+It is should be a cons (COMMAND . ARGS).  COMMAND should be valid executable.
 It is called arguments ARGS with the search query appended.  It should produce
 search results in JSON lines format."
   :type '(cons (string :tag "Hoogle command")
                (repeat :tag "Args for hoogle" string))
-  :group 'consult)
+  :group 'consult-hoogle)
 
 (defcustom consult-hoogle-project-args
   '("cabal-hoogle" . ("run" "--" "search" "--jsonl" "-q" "--count=250"))
@@ -40,12 +46,12 @@ It should be cons (COMMAND . ARGS). See `consult-hoogle-args' for details.  By
 default it uses `cabal-hoogle' https://github.com/kokobd/cabal-hoogle ."
   :type '(cons (string :tag "Project specific hoogle command")
                (repeat :tag "Args for hoogle" string))
-  :group 'consult)
+  :group 'consult-hoogle)
 
 (defcustom consult-hoogle-show-module-and-package t
   "Whether to show the package and module in the candidate line."
   :type 'boolean
-  :group 'consult)
+  :group 'consult-hoogle)
 
 (defvar consult-hoogle--history nil
   "Variable to store history for hoogle searches.")
@@ -242,16 +248,13 @@ STATE is the optional state function passed to the `consult--read'."
 (defun consult-hoogle (arg)
   "Search the local hoogle database.
 By default this shows the documentation for the current candidate in a side
-window. This can be disabled by a prefix ARG."
+window.  This can be disabled by a prefix ARG."
   (interactive (list current-prefix-arg))
   (if arg (consult-hoogle--search)
     (let* ((buf (get-buffer-create " *Hoogle Documentation*" t))
-           (height (if (bound-and-true-p vertico-count)
-                       vertico-count
-                     10))
            (window (display-buffer buf
                                    `(display-buffer-in-side-window
-                                     (window-height . ,(+ 3 height))
+                                     (window-height . 16)
                                      (side . bottom)
                                      (slot . -1)))))
       (with-current-buffer buf
@@ -267,7 +270,7 @@ By default uses cabal-hoogle and the database should have been generated
 by running `cabal-hoogle generate'.  `consult-hoogle-project-args' can be
 customized to configure an alternate command.
 By default this shows the documentation for the current candidate in a side
-window. This can be disabled by a prefix ARG."
+window.  This can be disabled by a prefix ARG."
   (interactive (list current-prefix-arg))
   (let ((consult-hoogle-args consult-hoogle-project-args)
         (default-directory (haskell-cabal-find-dir)))
@@ -300,13 +303,15 @@ window. This can be disabled by a prefix ARG."
     (scroll-up arg)))
 
 (defun consult-hoogle-restrict-to-package (package &optional arg)
-  "Restrict the search to PACKAGE. With prefix ARG exluce package from search."
+  "Restrict the search to PACKAGE.
+With prefix ARG exluce package from search."
   (interactive (list (consult-hoogle--get 'package) current-prefix-arg))
   (when package
     (consult-hoogle--add-to-input (if arg "-" "+") (downcase package))))
 
 (defun consult-hoogle-restrict-to-module (module &optional arg)
-  "Restrict the search to MODULE. With prefix ARG exluce module from search."
+  "Restrict the search to MODULE.
+With prefix ARG exluce module from search."
   (interactive (list (consult-hoogle--get 'module) current-prefix-arg))
   (when module (consult-hoogle--add-to-input (if arg "-" "+") module)))
 
@@ -344,11 +349,10 @@ With positive prefix ARG only clear restrictions. With negative prefix
 only clear exclusions."
   (interactive (list (when current-prefix-arg
                        (prefix-numeric-value current-prefix-arg))))
-  (let* ((restriction-rx (rx-to-string `(: ,(if (not arg)
-                                                '(or "+" "-")
-                                              (if (> arg 0) "+" "-"))
-                                         (0+ (not space))
-                                         (or (1+ space) eos)))))
+  (let ((restriction-rx (rx-to-string `(: ,(if (not arg)
+                                               '(or "+" "-")
+                                             (if (> arg 0) "+" "-"))
+                                        (0+ (not space))))))
     (consult-hoogle--modify-async-input
      (lambda (match) (replace-regexp-in-string restriction-rx "" match)))))
 
