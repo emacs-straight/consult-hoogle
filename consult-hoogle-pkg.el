@@ -1,2 +1,0 @@
-;; Generated package description from consult-hoogle.el  -*- no-byte-compile: t -*-
-(define-package "consult-hoogle" "0.2.1.0.20240427.131842" "Hoogle frontend using consult" '((emacs "27.1") (haskell-mode "16.1")) :commit "188c8d90a04adeb08c61a0835f5f9a9a10255495" :authors '(("rahguzar" . "rahguzar@zohomail.eu")) :maintainer '("rahguzar" . "rahguzar@zohomail.eu") :keywords '("docs" "languages") :url "https://codeberg.org/rahguzar/consult-hoogle")
