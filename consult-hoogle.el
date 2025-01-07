@@ -1,6 +1,6 @@
 ;;; consult-hoogle.el --- Hoogle frontend using consult -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2024 Free Software Foundation, Inc.
+;; Copyright (C) 2024-2025 Free Software Foundation, Inc.
 
 ;; Author: rahguzar <rahguzar@zohomail.eu>
 ;; Maintainer: rahguzar <rahguzar@zohomail.eu>
@@ -56,7 +56,7 @@
   "Build command line given INPUT."
   (pcase-let ((`(,arg . ,opts) (consult--command-split input)))
     (unless (string-blank-p arg)
-      (cons (append hoogle-base-args (list arg) opts)
+      (cons (append hoogle-base-args opts (list arg))
             (cdr (consult--default-regexp-compiler input 'basic t))))))
 
 (defun consult-hoogle--fontify (text)
@@ -82,10 +82,10 @@ we use the same buffer throughout."
            (from (propertize " from " 'face 'font-lock-comment-face))
            (module (cl-callf propertize
                        (alist-get 'name (alist-get 'module parsed) "")
-                     'face 'haskell-keyword-face))
+                     'face 'font-lock-keyword-face))
            (package (cl-callf propertize
                         (alist-get 'name (alist-get 'package parsed) "")
-                      'face 'haskell-quasi-quote-face)))
+                      'face 'font-lock-preprocessor-face)))
       (propertize
        (pcase (alist-get 'type parsed)
          (""  (consult-hoogle--format-value
@@ -93,11 +93,11 @@ we use the same buffer throughout."
                from module in package))
          ("module" (concat "Module "
                            (cl-callf hoogle-base--name (alist-get 'item parsed)
-                             'haskell-keyword-face)
+                             'font-lock-keyword-face)
                            in package))
          ("package" (concat "Package "
                             (cl-callf hoogle-base--name (alist-get 'item parsed)
-                              'haskell-quasi-quote-face))))
+                              'font-lock-preprocessor-face))))
        'consult--candidate parsed))))
 
 ;;;; Constructing the details buffer for the selected result
@@ -161,20 +161,19 @@ STATE is the optional state function passed to the `consult--read'."
       (hoogle-base--haskell-mode))
     (unwind-protect
         (funcall fun (consult--read
-                      (consult--async-command #'consult-hoogle--builder
-                        (consult--async-map #'consult-hoogle--format-result)
-                        (consult--async-highlight #'consult-hoogle--builder))
+                      (consult--async-pipeline
+                       (consult--async-process #'consult-hoogle--builder)
+                       (consult--async-map #'consult-hoogle--format-result)
+                       (consult--async-highlight #'consult-hoogle--builder))
                       :prompt "Hoogle: "
                       :require-match t
-                      :initial (consult--async-split-initial "")
                       :lookup #'consult--lookup-candidate
                       :state state
                       :sort nil
                       :keymap consult-hoogle-map
                       :add-history (or (and (fboundp 'haskell-ident-at-point)
-                                            (consult--async-split-initial
-                                             (haskell-ident-at-point)))
-                                     (consult--async-split-thingatpt 'symbol))
+                                            (haskell-ident-at-point))
+                                       (thing-at-point 'symbol))
                       :category 'consult-hoogle
                       :history '(:input consult-hoogle--history)))
       (when-let ((buf (get-buffer " *Hoogle Fontification*")))
