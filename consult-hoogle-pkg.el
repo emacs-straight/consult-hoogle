@@ -1,2 +1,2 @@
-;; Generated package description from consult-hoogle.el  -*- no-byte-compile: t -*-
-(define-package "consult-hoogle" "0.4.1.0.20250202.52435" "Hoogle frontend using consult" '((emacs "28.1") (consult "2.0")) :commit "5b16f2f6c8c9c81a2539ba8371db1f76e6e4cc68" :authors '(("rahguzar" . "rahguzar@mailbox.org")) :maintainer '("rahguzar" . "rahguzar@mailbox.org") :keywords '("docs" "languages") :url "https://codeberg.org/rahguzar/consult-hoogle")
+;; Generated package description from consult-hoogle.el  -*- mode: lisp-data; no-byte-compile: t -*-
+(define-package "consult-hoogle" "0.5.0.0.20250219.74017" "Hoogle frontend using consult" '((emacs "27.1") (consult "2.0")) :commit "384959016022d071464dc6e611e4fcded562834e" :authors '(("rahguzar" . "rahguzar@mailbox.org")) :maintainer '("rahguzar" . "rahguzar@mailbox.org") :keywords '("docs" "languages") :url "https://codeberg.org/rahguzar/consult-hoogle")

@@ -6,10 +6,10 @@
 ;; Maintainer: rahguzar <rahguzar@mailbox.org>
 ;; Created: April 10, 2022
 ;; License: GPL-3.0-or-later
-;; Version: 0.4.1
+;; Version: 0.5.0
 ;; Keywords: docs languages
 ;; Homepage: https://codeberg.org/rahguzar/consult-hoogle
-;; Package-Requires: ((emacs "28.1") (consult "2.0"))
+;; Package-Requires: ((emacs "27.1") (consult "2.0"))
 
 ;; This file is part of GNU Emacs.
 
@@ -25,7 +25,6 @@
 (require 'hoogle-base)
 
 (declare-function hoogle-buffer "hoogle-buffer")
-(declare-function project-root "project")
 
 ;;;; Variables
 (defgroup consult-hoogle nil
@@ -209,9 +208,7 @@ By default this shows the documentation for the current candidate in a side
 window.  This can be disabled by a prefix ARG."
   (interactive (list current-prefix-arg))
   (let ((hoogle-base-args hoogle-base-project-args)
-        (default-directory (if-let ((proj (project-current)))
-                               (project-root proj)
-                             default-directory)))
+        (default-directory (funcall hoogle-base-project-root-function)))
     (consult-hoogle arg)))
 
 (defun consult-hoogle-scroll-docs-down (&optional arg)
@@ -229,8 +226,15 @@ window.  This can be disabled by a prefix ARG."
 (defun consult-hoogle-export-to-buffer ()
   "Open a buffer containing results for the async part of current search."
   (interactive)
-  (let ((input (consult-hoogle--async-input)))
-    (hoogle-buffer input (get-buffer-create "*hoogle-search*"))
+  (let ((input (consult-hoogle--async-input))
+        (args hoogle-base-args)
+        (dir default-directory))
+    (run-at-time
+     0 nil
+     (lambda ()
+       (let ((hoogle-base-args args)
+             (default-directory dir))
+         (hoogle-buffer input (get-buffer-create "*hoogle-search*")))))
     (abort-recursive-edit)))
 
 (provide 'consult-hoogle)
